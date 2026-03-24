@@ -25,7 +25,7 @@ RUN mkdir -p /srv/www/app
 ADD app /srv/www/app
 
 #install Flask and related modules
-RUN pip install Flask Flask-Login Flask-WTF
+RUN pip install --index-url https://pypi.org/simple/ Flask==1.1.4 Flask-Login==0.4.1 Flask-WTF==0.14.3
 
 #copy conf files for our new app over to Apache's conf
 ADD conf /etc/apache2/sites-available
