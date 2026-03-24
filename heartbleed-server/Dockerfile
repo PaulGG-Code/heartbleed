@@ -24,6 +24,9 @@ RUN mkdir -p /srv/www/app
 #copy files over
 ADD app /srv/www/app
 
+#fix Python 2.7 SNI support so pip can connect to modern HTTPS servers
+RUN apt-get install -y python-openssl python-ndg-httpsclient python-pyasn1
+
 #install Flask and related modules
 RUN wget https://bootstrap.pypa.io/pip/2.7/get-pip.py -O /tmp/get-pip.py && python /tmp/get-pip.py
 RUN pip install Flask==1.1.4 Flask-Login==0.4.1 Flask-WTF==0.14.3
