@@ -1,6 +1,6 @@
-FROM dorowu/ubuntu-desktop-lxde-vnc:bionic
+FROM --platform=linux/amd64 dorowu/ubuntu-desktop-lxde-vnc:bionic
 
-MAINTAINER Rajesh Kalyanam "rkalyanapurdue@gmail.com"
+LABEL maintainer="Rajesh Kalyanam <rkalyanapurdue@gmail.com>"
 
 #add Python
 RUN apt-get update && apt-get -y install python

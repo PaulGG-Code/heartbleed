@@ -1,4 +1,4 @@
-FROM ubuntu:trusty
+FROM --platform=linux/amd64 ubuntu:trusty
 
 RUN apt-get update
 RUN apt-get -y install python python-pip
