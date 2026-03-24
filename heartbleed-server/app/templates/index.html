@@ -1,12 +1,460 @@
-<!doctype html>
-<title>My Application</title>
-{% with messages = get_flashed_messages() %}
-  {% if messages %}
-    <ul class=flashes>
-    {% for message in messages %}
-      <li>{{ message }}</li>
-    {% endfor %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SecureVault — Dashboard</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      background: #0d1117;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      color: #c9d1d9;
+    }
+
+    /* ── Navbar ── */
+    .navbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2rem;
+      height: 60px;
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .nav-brand .icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #00c6ff, #0072ff);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 1.5rem;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: #8b949e;
+      text-decoration: none;
+      font-size: 0.88rem;
+      transition: color 0.2s;
+    }
+
+    .nav-links a:hover, .nav-links a.active { color: #c9d1d9; }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #0072ff, #00c6ff);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #fff;
+      cursor: pointer;
+    }
+
+    .btn-logout {
+      padding: 0.4rem 0.9rem;
+      background: transparent;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      color: #8b949e;
+      font-size: 0.82rem;
+      cursor: pointer;
+      text-decoration: none;
+      transition: border-color 0.2s, color 0.2s;
+    }
+
+    .btn-logout:hover { border-color: #ef4444; color: #ef4444; }
+
+    /* ── Layout ── */
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    /* ── Welcome banner ── */
+    .welcome-banner {
+      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      border: 1px solid #30363d;
+      border-radius: 16px;
+      padding: 1.8rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.8rem;
+    }
+
+    .welcome-banner h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .welcome-banner p {
+      font-size: 0.85rem;
+      color: #8a9bb0;
+      margin-top: 0.3rem;
+    }
+
+    .alert-badge {
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.35);
+      border-radius: 8px;
+      padding: 0.5rem 0.9rem;
+      font-size: 0.75rem;
+      color: #fca5a5;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    /* ── Stats grid ── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.8rem;
+    }
+
+    .stat-card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 1.2rem 1.4rem;
+    }
+
+    .stat-card .label {
+      font-size: 0.75rem;
+      color: #8b949e;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-card .value {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .stat-card .change {
+      font-size: 0.75rem;
+      margin-top: 0.3rem;
+    }
+
+    .change.up { color: #3fb950; }
+    .change.down { color: #f85149; }
+
+    /* ── Two-column section ── */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-bottom: 1.8rem;
+    }
+
+    @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+
+    /* ── Cards ── */
+    .panel {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 12px;
+      padding: 1.4rem;
+    }
+
+    .panel h3 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #c9d1d9;
+      margin-bottom: 1rem;
+      padding-bottom: 0.6rem;
+      border-bottom: 1px solid #21262d;
+    }
+
+    /* ── Transactions ── */
+    .tx-list { list-style: none; }
+
+    .tx-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.65rem 0;
+      border-bottom: 1px solid #21262d;
+    }
+
+    .tx-item:last-child { border-bottom: none; }
+
+    .tx-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .tx-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .tx-icon.green  { background: rgba(63, 185, 80, 0.15); }
+    .tx-icon.red    { background: rgba(248, 81, 73, 0.15); }
+    .tx-icon.blue   { background: rgba(0, 114, 255, 0.15); }
+    .tx-icon.yellow { background: rgba(210, 153, 34, 0.15); }
+
+    .tx-name  { font-size: 0.85rem; color: #c9d1d9; }
+    .tx-date  { font-size: 0.72rem; color: #6e7681; }
+    .tx-amount { font-size: 0.9rem; font-weight: 600; }
+    .tx-amount.credit { color: #3fb950; }
+    .tx-amount.debit  { color: #f85149; }
+
+    /* ── Profile card ── */
+    .profile-header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 1rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid #21262d;
+    }
+
+    .profile-avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #0072ff, #00c6ff);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .profile-name { font-size: 1rem; font-weight: 600; color: #ffffff; }
+    .profile-role { font-size: 0.78rem; color: #8b949e; }
+
+    .profile-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.82rem;
+      padding: 0.45rem 0;
+      border-bottom: 1px solid #21262d;
+    }
+
+    .profile-row:last-child { border-bottom: none; }
+    .profile-row .key { color: #6e7681; }
+    .profile-row .val { color: #c9d1d9; }
+
+    /* ── Security notice ── */
+    .security-notice {
+      background: rgba(248, 81, 73, 0.08);
+      border: 1px solid rgba(248, 81, 73, 0.25);
+      border-radius: 12px;
+      padding: 1.2rem 1.4rem;
+      display: flex;
+      gap: 0.9rem;
+      align-items: flex-start;
+    }
+
+    .security-notice .icon { font-size: 1.3rem; flex-shrink: 0; }
+    .security-notice h4 { font-size: 0.88rem; color: #f85149; margin-bottom: 0.3rem; }
+    .security-notice p  { font-size: 0.78rem; color: #8b949e; line-height: 1.5; }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      font-size: 0.72rem;
+      color: #3d444d;
+      border-top: 1px solid #21262d;
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="navbar">
+    <div class="nav-brand">
+      <div class="icon">🔐</div>
+      SecureVault
+    </div>
+    <ul class="nav-links">
+      <li><a href="/" class="active">Dashboard</a></li>
+      <li><a href="#">Accounts</a></li>
+      <li><a href="#">Transfers</a></li>
+      <li><a href="#">Reports</a></li>
     </ul>
-  {% endif %}
-{% endwith %}
-{% block body %}{% endblock %}
+    <div class="nav-right">
+      <div class="avatar">{{ current_user.username[0].upper() }}</div>
+      <a href="/logout" class="btn-logout">Sign Out</a>
+    </div>
+  </nav>
+
+  <div class="container">
+
+    <!-- Welcome -->
+    <div class="welcome-banner">
+      <div>
+        <h1>Welcome back, {{ current_user.username }}!</h1>
+        <p>Last login: Today at 09:42 AM &nbsp;·&nbsp; IP 192.168.1.42</p>
+      </div>
+      <div class="alert-badge">⚠ SSL/TLS vulnerability present</div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="label">Checking Balance</div>
+        <div class="value">$12,480.50</div>
+        <div class="change up">▲ +$240.00 this month</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Savings Balance</div>
+        <div class="value">$48,320.00</div>
+        <div class="change up">▲ +2.1% APY</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Pending Transactions</div>
+        <div class="value">3</div>
+        <div class="change down">▼ Awaiting clearance</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">Credit Score</div>
+        <div class="value">742</div>
+        <div class="change up">▲ Good standing</div>
+      </div>
+    </div>
+
+    <!-- Transactions + Profile -->
+    <div class="two-col">
+
+      <div class="panel">
+        <h3>Recent Transactions</h3>
+        <ul class="tx-list">
+          <li class="tx-item">
+            <div class="tx-left">
+              <div class="tx-icon green">💵</div>
+              <div>
+                <div class="tx-name">Payroll Deposit</div>
+                <div class="tx-date">Mar 22, 2026</div>
+              </div>
+            </div>
+            <div class="tx-amount credit">+$3,200.00</div>
+          </li>
+          <li class="tx-item">
+            <div class="tx-left">
+              <div class="tx-icon red">🛒</div>
+              <div>
+                <div class="tx-name">Amazon Purchase</div>
+                <div class="tx-date">Mar 21, 2026</div>
+              </div>
+            </div>
+            <div class="tx-amount debit">-$89.99</div>
+          </li>
+          <li class="tx-item">
+            <div class="tx-left">
+              <div class="tx-icon yellow">⚡</div>
+              <div>
+                <div class="tx-name">Electricity Bill</div>
+                <div class="tx-date">Mar 20, 2026</div>
+              </div>
+            </div>
+            <div class="tx-amount debit">-$142.00</div>
+          </li>
+          <li class="tx-item">
+            <div class="tx-left">
+              <div class="tx-icon blue">🔄</div>
+              <div>
+                <div class="tx-name">Wire Transfer In</div>
+                <div class="tx-date">Mar 18, 2026</div>
+              </div>
+            </div>
+            <div class="tx-amount credit">+$500.00</div>
+          </li>
+          <li class="tx-item">
+            <div class="tx-left">
+              <div class="tx-icon red">🍔</div>
+              <div>
+                <div class="tx-name">Restaurant</div>
+                <div class="tx-date">Mar 17, 2026</div>
+              </div>
+            </div>
+            <div class="tx-amount debit">-$38.50</div>
+          </li>
+        </ul>
+      </div>
+
+      <div>
+        <div class="panel" style="margin-bottom:1rem">
+          <h3>User Profile</h3>
+          <div class="profile-header">
+            <div class="profile-avatar">{{ current_user.username[0].upper() }}</div>
+            <div>
+              <div class="profile-name">{{ current_user.username }}</div>
+              <div class="profile-role">Premium Account Holder</div>
+            </div>
+          </div>
+          <div class="profile-row"><span class="key">Account #</span><span class="val">****-4872</span></div>
+          <div class="profile-row"><span class="key">Email</span><span class="val">{{ current_user.username }}@securevault.io</span></div>
+          <div class="profile-row"><span class="key">Member since</span><span class="val">Jan 2019</span></div>
+          <div class="profile-row"><span class="key">2FA</span><span class="val" style="color:#f85149">Disabled ⚠</span></div>
+          <div class="profile-row"><span class="key">TLS Version</span><span class="val" style="color:#f85149">OpenSSL 1.0.1f</span></div>
+        </div>
+
+        <div class="security-notice">
+          <div class="icon">🩸</div>
+          <div>
+            <h4>CVE-2014-0160 — Heartbleed</h4>
+            <p>This server runs a vulnerable version of OpenSSL. An attacker can read up to 64 KB of server memory per request — including session cookies, private keys, and credentials in plaintext.</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <footer>
+    SecureVault Demo &nbsp;·&nbsp; CVE-2014-0160 Educational Environment &nbsp;·&nbsp; Do not use in production
+  </footer>
+
+</body>
+</html>

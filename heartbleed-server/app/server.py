@@ -50,7 +50,13 @@ def load_user(id):
 @app.route('/')
 @login_required
 def index():
-    return 'Hello {}!'.format(current_user.username)
+    return flask.render_template('index.html')
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return flask.redirect(flask.url_for('login'))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
