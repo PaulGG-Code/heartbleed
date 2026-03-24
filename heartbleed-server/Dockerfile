@@ -1,3 +1,8 @@
+# Stage 1: use modern Python to download wheels (avoids SSL/SNI issues in old pip)
+FROM python:2.7-slim as wheel-builder
+RUN pip download Flask==1.1.4 Flask-Login==0.4.1 Flask-WTF==0.14.3 -d /wheels
+
+# Stage 2: the actual vulnerable server image
 FROM --platform=linux/amd64 ubuntu:trusty
 
 RUN apt-get update
@@ -24,10 +29,9 @@ RUN mkdir -p /srv/www/app
 #copy files over
 ADD app /srv/www/app
 
-#install Flask and related modules
-#use --trusted-host to bypass Python 2.7 SSL/SNI issues (pip already installed via apt)
-RUN pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org --upgrade "pip<21.0"
-RUN pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org Flask==1.1.4 Flask-Login==0.4.1 Flask-WTF==0.14.3
+#install Flask and related modules from pre-downloaded wheels (no network needed)
+COPY --from=wheel-builder /wheels /wheels
+RUN pip install --no-index --find-links=/wheels Flask==1.1.4 Flask-Login==0.4.1 Flask-WTF==0.14.3
 
 #copy conf files for our new app over to Apache's conf
 ADD conf /etc/apache2/sites-available
